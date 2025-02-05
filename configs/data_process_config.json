@@ -1,0 +1,11 @@
+{
+    "homoglyphs_dict_path": "data/external/homoglyphs.pkl",
+    "preprocessed_data_path": "data/preprocessed/dictionary_sentences_balanced.pkl",
+    "save_dataset_dir": "data/processed/",
+    "generation_method": "by_size",
+    "generation_limits": [
+        [50, 0, 0.75],
+        [150, 0, 0.4],
+        [300, 0, 0.1]
+    ]
+}
