@@ -1,9 +1,10 @@
-from datetime import date
+import random
 import enum
 import numpy as np
 import pandas as pd
-from tqdm import tqdm, trange
-from glyf.utils.utils import load_json, load_pkl, save_pkl, parse_args
+from tqdm import tqdm
+from datetime import date
+from utils.utils import load_json, load_pkl, save_pkl, parse_args
 
 import nltk
 from nltk.tokenize import word_tokenize
@@ -16,8 +17,8 @@ class GenerationMethod(enum.Enum):
   by_size = 'by_size'
 
 class GlyphProcessor:
-  def __init__(self, glyphs_path):
-    self.glyphs_dict = load_pkl(glyphs_path)
+  def __init__(self, glyphs_dict):
+    self.glyphs_dict = glyphs_dict
     
   def _get_index(self, lst, targets):
     lst = np.array(lst)
@@ -119,13 +120,14 @@ class GlyphProcessor:
     return data
 
 if __name__ == "__main__":
-  args = parse_args()
+  args = parse_args("Process the data: analyze and corrupt")
   config = load_json(args.config_path)
   
+  glyphs_dict = load_pkl(config['homoglyphs_dict_path'])
   sentences = load_pkl(config['preprocessed_data_path'])
   generation_method = GenerationMethod(config['generation_method'])
   generation_limits = config['generation_limits']
-  processor = GlyphProcessor(config['homoglyphs_dict_path'])
+  processor = GlyphProcessor(glyphs_dict)
   available_glyphs = list(processor.glyphs_dict.keys())
 
   print('Analyzing the data before it gets corrupted...')
@@ -136,6 +138,15 @@ if __name__ == "__main__":
   print('Corrupting the data...')
   priority = dict(analyze.set_index('letters')['priority'].to_dict().items())
   dataset = processor.perturbate(sentences, generation_method, priority, limits=generation_limits)
-  print(f'Length of the dataset: {len(dataset)}')
-  dataset_path = f'{config["save_dataset_dir"]}dataset_{date.today()}.pkl'
-  save_pkl(dataset, dataset_path)
+  size_ds = len(dataset)
+
+  print('Splitting the dataset...')
+  train_size = int(size_ds*config["train_size"])
+  random.shuffle(dataset)
+  print(f'Length of the dataset: {size_ds}, train - {train_size}, test - {size_ds - train_size}')
+  train_dataset_path = f'{config["save_train_dataset_dir"]}{config["dataset_name"]}_train_{date.today()}.pkl'
+  test_dataset_path = f'{config["save_test_dataset_dir"]}{config["dataset_name"]}_test_{date.today()}.pkl'
+  print('Saving the datasets...')
+  save_pkl(dataset[:train_size], train_dataset_path)
+  save_pkl(dataset[train_size:], test_dataset_path)
+  print('Done!')
