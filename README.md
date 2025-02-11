@@ -1,2 +1,2 @@
-# homoglyph_correction
+# T5-GlyF - model for correcting homoglyphs
  
