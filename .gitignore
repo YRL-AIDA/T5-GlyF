@@ -4,3 +4,5 @@ __pycache__/
 data/preprocessed/*.pkl
 data/processed/train/*.pkl
 data/processed/test/*.pkl
+
+logs/*.log
