@@ -1,0 +1,14 @@
+{
+    "model_path": "ai-forever/sage-fredt5-distilled-95m",
+    "homoglyphs_dict_path": "data/external/homoglyphs.pkl",
+    "train_dataset_path": "data/processed/train/dictionary_dataset_train_2025-02-10.pkl",
+    "train_size": 0.8,
+    "generation_prefix": "fix homoglyphs: ",
+    "number_of_epochs": 5,
+    "learning_rate": 5e-5,
+    "batch_size": 128,
+    "early_stopping_patience": 5,
+    "logs_path": "logs/logs.log",
+    "save_model_dir": "model/",
+    "save_chart_dir": "charts/"
+}

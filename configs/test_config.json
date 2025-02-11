@@ -1,0 +1,8 @@
+{
+    "homoglyphs_dict_path": "data/external/homoglyphs.pkl",
+    "model_path": "model/trained/",
+    "generation_prefix": "fix homoglyphs: ",
+    "test_dataset_path": "data/processed/test/dictionary_dataset_test_2025-02-10.pkl",
+    "test_batch_size": 128,
+    "logs_path": "logs/logs.log"
+}
