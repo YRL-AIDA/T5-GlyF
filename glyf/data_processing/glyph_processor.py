@@ -12,11 +12,29 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 
 class GenerationMethod(enum.Enum):
+  """
+  Enumeration of generation methods.
+
+  by_const - the generation will be in constant mode: min_perturb, max_perturb are integer (for example, min_perturb = 1; max_perturb = 7);
+  by_percentage - the generation will be in percentage mode: min_perturb, max_perturb = [0..1] (for example, min_perturb = 0.1; max_perturb = 0.75);
+  by_size - similar to the percentage mode, required parameter is generation_limits, where for each maximum length of sentences are specified min_perturb and max_perturb ([0..1]):
+    generation_limits = [
+      [50, 0.1, 0.9],
+      [100, 0.3, 0.75],
+      ...
+    ]
+
+    [length of sentence, %min_perturb, %max_perturb]
+  """
   by_const = 'by_const'
   by_percentage = 'by_percentage'
   by_size = 'by_size'
 
 class GlyphProcessor:
+  """
+  GlyphProcessor - a tool for data analysis and generation.
+  :param glyphs_dict: a dictionary where the key is a correct glyph, the value is a list of its homoglyphs -> {'a' : ['а', ...]};
+  """
   def __init__(self, glyphs_dict):
     self.glyphs_dict = glyphs_dict
     
@@ -29,6 +47,13 @@ class GlyphProcessor:
     return indices
     
   def analyze_sentences(self, sentences, available_letters):
+    """
+    Analyzes input sentences.
+
+    :param sentences: list of sentences to analyze;
+    :param available_letters: list of letters (glyphs) for which statistics will be calculated;
+    :return: pandas DataFrame with main statistics, mean length of words, mean length of sentences.
+    """
     stop_words = ['.', ',', ';', ':', '?', '!', "'", '``', '`', '(', ')', '<', '>', '=', '{', '}', '/', '|', '~', '^', '%', '+', '-', '$']
     mean_word_length = []
     mean_sentence_length = []
@@ -76,15 +101,26 @@ class GlyphProcessor:
 
     return df, mean_word_length, mean_sentence_length
     
-  def perturbate(self, words, method, priority, min_perturb=1, max_perturb=1, limits=[]):
+  def perturbate(self, sentences, method, priority, min_perturb=1, max_perturb=1, limits=[]):
+    """
+    Generates dataset (makes perturbations in sentences by replacing glyphs with their homoglyphs).
+
+    :param sentences: list of sentences to perturbate;
+    :param method: generation method (check enum GenerationMethod);
+    :param priority: a dictionary where the key is a correct glyph, the value is its priority (reverse frequency);
+    :param min_perturb: a minimum count of perturbations in a single sentence (default = 1);
+    :param max_perturb: a maximum count of perturbations in a single sentence (default = 1);
+    :param limits: generation limits ([sentences_length, %min_perturb, %max_perturb]) if you choose GenerationMethod.by_size (default = []);
+    :return: dataset with perturbations in sentences.
+    """
     glyphs_list = list(self.glyphs_dict.keys())
     order = dict(zip(glyphs_list, np.zeros(len(glyphs_list), dtype=np.int32)))
 
     data = []
     target = list(self.glyphs_dict.keys())
-    pbar = tqdm(words)
-    for word in pbar:
-      w = list(word)
+    pbar = tqdm(sentences)
+    for sentence in pbar:
+      w = list(sentence)
       list_index = self._get_index(w, target) 
 
       if method == GenerationMethod.by_const:
@@ -109,13 +145,13 @@ class GlyphProcessor:
             max_perturb = round(len(w)*0.055)   
 
       for perturb in range(min_perturb, max_perturb + 1):       
-        char_priority = [(priority[word[idx]], idx) for idx in list_index]
+        char_priority = [(priority[sentence[idx]], idx) for idx in list_index]
         index = np.sort(char_priority, axis=0)[-perturb:,1][::-1].astype(np.int32)      
         for i in index:
-          w[i] = self.glyphs_dict[word[i]][order[word[i]]]
-          order[word[i]] = (order[word[i]] + 1) % len(self.glyphs_dict[word[i]])
-        data.append(["".join(w), word])
-        w = list(word)     
+          w[i] = self.glyphs_dict[sentence[i]][order[sentence[i]]]
+          order[sentence[i]] = (order[sentence[i]] + 1) % len(self.glyphs_dict[sentence[i]])
+        data.append(["".join(w), sentence])
+        w = list(sentence)     
 
     return data
 

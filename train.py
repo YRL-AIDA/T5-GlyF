@@ -12,6 +12,23 @@ from logs.logger import Logger
 from utils.utils import parse_args, load_json, load_pkl, plot_losses
 
 def fit(model, tokenizer, train, val, prefix, device, optim, epochs, learning_rate, batch_size, early_stopping_patience, logs_path):
+    """
+    Function for training the model.
+
+    :param model: model that needs to be trained;
+    :param tokenizer: tokenizer for the model that needs to be trained;
+    :param train: training dataset in the torch.dataset wrapper;
+    :param val: validation dataset in the torch.dataset wrapper;
+    :param prefix: additional prompt for model (for example, 'fix homoglyphs: '), some models need it;
+    :param device: device on which the model will be located (cpu/gpu);
+    :param optim: the model learning optimizer;
+    :param epochs: amount of iterations of the dataset cycle;
+    :param learning_rate: step size at each iteration while moving toward a minimum of a loss function;
+    :param batch_size: size of subsample of training examples;
+    :param early_stopping_patience: number of epochs to wait if no improvement and then stop the training;
+    :param logs_path: path to file for logging (for example, 'logs.log');
+    :return: best model by validation loss, list of losses on training, list of losses on validation.
+    """
 
     model.to(device)
     optimizer = optim(model.parameters(), lr=learning_rate)
