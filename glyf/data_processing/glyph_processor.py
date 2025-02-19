@@ -61,7 +61,7 @@ class GlyphProcessor:
 
     alphabet = {}
 
-    for char in self.glyphs_dict:
+    for char in available_letters:
       alphabet[char] = 0
 
     pbar = tqdm(sentences)
