@@ -71,7 +71,7 @@ def fit(model, tokenizer, train, val, prefix, device, optim, epochs, learning_ra
 
             mean_loss += loss.item()
             batch_n += 1
-            pbar_train.set_postfix(loss_train=round(mean_loss/batch_n, 6), refresh=True)
+            pbar_train.set_postfix(loss_train=round(mean_loss/batch_n, 12), refresh=True)
 
         mean_loss /= batch_n
         train_loss.append(mean_loss)
@@ -98,7 +98,7 @@ def fit(model, tokenizer, train, val, prefix, device, optim, epochs, learning_ra
         val_loss.append(mean_loss)
         logger.info("train", f"Epoch {epoch + 1}/{epochs} - train_loss: {train_loss[-1]}; valid_loss: {val_loss[-1]}")
 
-        print(f'{space}loss_valid={round(mean_loss, 6)}')
+        print(f'{space}loss_valid={round(mean_loss, 12)}')
 
         if mean_loss < best_val_loss:
             best_epoch = epoch

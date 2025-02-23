@@ -23,7 +23,7 @@ if __name__ == "__main__":
     ds = load_pkl(dataset_path)
 
     acc, l_ratio = corrector.evaluate(ds, batch_size, logs_path)
-    print(f'Testing is over./nAccuracy: {acc}; levenshtein-ratio: {l_ratio}')
+    print(f'Testing is over.\nAccuracy: {acc}; levenshtein-ratio: {l_ratio}')
 
 
     
