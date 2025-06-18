@@ -5,6 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from datetime import date
 from utils.utils import load_json, load_pkl, save_pkl, parse_args
+from typing import List, Dict, Tuple, Optional, Any
 
 import nltk
 from nltk.tokenize import word_tokenize
@@ -34,25 +35,27 @@ class GlyphProcessor:
   """
   GlyphProcessor - a tool for data analysis and generation.
   :param glyphs_dict: a dictionary where the key is a correct glyph, the value is a list of its homoglyphs -> {'a' : ['а', ...]};
+  :type  glyphs_dict: Dict[str, List[str]];
   """
-  def __init__(self, glyphs_dict):
+  def __init__(self, glyphs_dict: Dict[str, List[str]]):
     self.glyphs_dict = glyphs_dict
     
   def _get_index(self, lst, targets):
-    lst = np.array(lst)
-    indices = np.asarray([], dtype='int32')
+    indices = []
     for target in targets:
-      temp = np.where(lst == target)[0]
-      indices = np.concatenate([indices, temp], dtype='int32')
+      indices += [i for i, letter in enumerate(lst) if letter == target]
     return indices
     
-  def analyze_sentences(self, sentences, available_letters):
+  def analyze_sentences(self, sentences: List[str], available_letters: List[str]) -> Tuple[pd.DataFrame, float, float]:
     """
     Analyzes input sentences.
 
     :param sentences: list of sentences to analyze;
+    :type  sentences: List[str];
     :param available_letters: list of letters (glyphs) for which statistics will be calculated;
-    :return: pandas DataFrame with main statistics, mean length of words, mean length of sentences.
+    :type  available_letters: List[str];
+    :return: pandas DataFrame with main statistics, mean length of words, mean length of sentences;
+    :rtype: Tuple[pd.DataFrame, float, float].
     """
     stop_words = ['.', ',', ';', ':', '?', '!', "'", '``', '`', '(', ')', '<', '>', '=', '{', '}', '/', '|', '~', '^', '%', '+', '-', '$']
     mean_word_length = []
@@ -101,17 +104,32 @@ class GlyphProcessor:
 
     return df, mean_word_length, mean_sentence_length
     
-  def perturbate(self, sentences, method, priority, min_perturb=1, max_perturb=1, limits=[]):
+  def perturbate(
+      self, 
+      sentences: List[str], 
+      method: str, 
+      priority: Dict[str, float], 
+      min_perturb: int = 1, 
+      max_perturb: int = 1, 
+      limits: Optional[List[Any]] = None
+  ) -> List[List[str]]:
     """
     Generates dataset (makes perturbations in sentences by replacing glyphs with their homoglyphs).
 
     :param sentences: list of sentences to perturbate;
+    :type  sentences: List[str];
     :param method: generation method (check enum GenerationMethod);
+    :type  method: str;
     :param priority: a dictionary where the key is a correct glyph, the value is its priority (reverse frequency);
+    :type  priority: Dict[str, float];
     :param min_perturb: a minimum count of perturbations in a single sentence (default = 1);
+    :type  min_perturb: int;
     :param max_perturb: a maximum count of perturbations in a single sentence (default = 1);
-    :param limits: generation limits ([sentences_length, %min_perturb, %max_perturb]) if you choose GenerationMethod.by_size (default = []);
-    :return: dataset with perturbations in sentences.
+    :type  max_perturb: int;
+    :param limits: generation limits ([sentences_length, %min_perturb, %max_perturb]) if you choose GenerationMethod.by_size (default = None);
+    :type  limits: Optional[List[Any]];
+    :return: dataset with perturbations in sentences;
+    :rtype: List[List[str, str]].
     """
     glyphs_list = list(self.glyphs_dict.keys())
     order = dict(zip(glyphs_list, np.zeros(len(glyphs_list), dtype=np.int32)))
@@ -145,8 +163,8 @@ class GlyphProcessor:
             max_perturb = round(len(w)*0.055)   
 
       for perturb in range(min_perturb, max_perturb + 1):       
-        char_priority = [(priority[sentence[idx]], idx) for idx in list_index]
-        index = np.sort(char_priority, axis=0)[-perturb:,1][::-1].astype(np.int32)      
+        char_priority = [(priority[sentence[idx]], random.random(), idx) for idx in list_index]
+        index = [x[2] for x in sorted(char_priority)[-perturb:]]        
         for i in index:
           w[i] = self.glyphs_dict[sentence[i]][order[sentence[i]]]
           order[sentence[i]] = (order[sentence[i]] + 1) % len(self.glyphs_dict[sentence[i]])
