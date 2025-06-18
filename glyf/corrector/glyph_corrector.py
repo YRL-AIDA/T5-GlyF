@@ -4,17 +4,23 @@ import numpy as np
 from transformers import T5ForConditionalGeneration, AutoTokenizer
 from utils.utils import load_pkl, calculate_accruracy, calculate_levenshtein_ratio
 from logs.logger import Logger
+from typing import Union, List, Dict, Tuple, Optional
 
 class GlyphCorrector:
     """
     Inference class for trained model.
 
-    :param model_path: path to model; 
+    __init__ params:
+    :param model_path: path to model;
+    :type  model_path: string;
     :param glyphs_path: path to dictionary of homoglyphs;
+    :type  glyphs_path: Dict[str, List[str]];
     :param prefix: additional prompt for model (for example, 'fix homoglyphs: '), some models need it;
+    :type  prefix: str;
     :param device: device on which the model will be located (cpu/gpu);
+    :type  device: str or torch.device;
     """
-    def __init__(self, model_path, glyphs_path, prefix, device):
+    def __init__(self, model_path: str, glyphs_path: Dict[str, List[str]], prefix: Optional[str], device: Union[str, torch.device]):
         self.model = T5ForConditionalGeneration.from_pretrained(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.glyphs_dict = load_pkl(glyphs_path)
@@ -29,22 +35,27 @@ class GlyphCorrector:
         self.model.to(self.device)
         self.model.eval()
 
-    def correct(self, sentence):
+    def correct(self, sentence: str) -> str:
         """
         Corrects a single input sentence.
 
         :param x: input sentence;
-        :return: corrected sentence.
+        :type  x: str;
+        :return: corrected sentence;
+        :rtype: str.
         """
         return self.batch_correct([sentence], batch_size=1)[-1][0]
     
-    def batch_correct(self, sentences, batch_size):
+    def batch_correct(self, sentences: List[str], batch_size: int) -> List[List[str]]:
         """
         Corrects input list of sentences.
 
         :param sentences: input list of sentences;
+        :type  sentences: List[str];
         :param batch_size: size of subsample of input sentences;
-        :return: corrected sentences.
+        :type  batch_size: int;
+        :return: corrected sentences;
+        :rtype: List[List[str]];
         """
         batches = [sentences[i:i + batch_size] for i in range(0, len(sentences), batch_size)]
         result = []
@@ -57,14 +68,18 @@ class GlyphCorrector:
                 result.append(self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True))
         return result
     
-    def evaluate(self, dataset, batch_size=32, logs_path=''):
+    def evaluate(self, dataset: List[List[str]], batch_size: int = 32, logs_path: str ="") -> Tuple[float, float]:
         """
         Evaluate the model on dataset.
 
         :param dataset: data ([[X, y], ...], X - attacked sentence, y - corrected sentence);
+        :type  dataset: List[List[str]];
         :param batch_size: size of subsample of input sentences (default = 32);
+        :type  batch_size: int;
         :param logs_path: path to file for logging (for example, 'logs.log');
-        :return: calculated metrics on the dataset (accuracy and levenshtein ratio)
+        :type  logs_path: str;
+        :return: calculated metrics on the dataset (accuracy and levenshtein ratio);
+        :rtype: Tuple[float, float].
         """
         y_true = [x[1] for x in dataset]
         x = [x[0] for x in dataset]
